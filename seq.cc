@@ -65,10 +65,10 @@ int queryMax(int l, int r) {
     int ans = 0;
     for (l += N, r += N; l ^ r ^ 1; l >>= 1, r >>= 1) {
         if (~l & 1) {
-            ans += std::max(treeMax[l ^ 1], ans);
+            ans = std::max(treeMax[l ^ 1], ans);
         }
         if (r & 1) {
-            ans += std::max(treeMax[r ^ 1], ans);
+            ans = std::max(treeMax[r ^ 1], ans);
         }
     }
     return ans;
@@ -104,7 +104,7 @@ void cal(char* infile, char* outfile) {
     }
     delete [] treeSum;
 #endif
-#if Max == true
+#if MAX == true
     treeMax = new int[N << 1];
     buildMax();
     for (int t = T; t; t--) {

@@ -29,7 +29,7 @@ int querySum(int l, int r) {
 int queryMax(int l, int r) {
     int ans = 0;
     for (; l <= r; l++) {
-        ans += std::max(A[l], ans);
+        ans = std::max(A[l], ans);
     }
     return ans;
 }
@@ -56,7 +56,7 @@ void cal(char* infile, char* outfile) {
             break;
         }
 #endif
-#if Max == true
+#if MAX == true
     fscanf(fin, "%d %d %d", &action, &param1, &param2);
     switch(action) {
     case 0:

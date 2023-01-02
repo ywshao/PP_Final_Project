@@ -33,11 +33,15 @@ void buildSum() {
 }
 
 void buildMax() {
+    #pragma omp parallel for
     for (int i = 0; i < N; i++) {
         treeMax[i + N] = A[i];
     }
-    for (int i = N - 1; i > 0; i--) {
-        treeMax[i] = std::max(treeMax[i << 1], treeMax[i << 1 | 1]);
+    for (int NN = N; NN > 1; NN >>= 1) {
+        #pragma omp parallel for
+        for (int i = NN >> 1; i < NN; i++) {
+            treeMax[i] = std::max(treeMax[i << 1], treeMax[i << 1 | 1]);
+        }
     }
     treeMax[0] = 0;
 }
@@ -53,25 +57,47 @@ void updateSum(int index, int delta) {
     for (int i = 0; i < depth; i++) {
         treeSum[updateIndex[i]] += delta;
     }
-    /*for (int i = index + N; i; i >>= 1) {
-        treeSum[i] += delta;
-    }*/
 }
 
 void updateMax(int index, int data) {
-    for (int i = index + N; i; i >>= 1) {
-        treeMax[i] = std::max(treeMax[i], data);
+    int leafIndex = index + N;
+    int updateIndex[depth];
+    #pragma omp parallel for
+    for (int i = 0; i < depth; i++) {
+        updateIndex[i] = leafIndex >> i;
+    }
+    #pragma omp parallel for
+    for (int i = 0; i < depth; i++) {
+        treeMax[updateIndex[i]] = std::max(treeMax[updateIndex[i]], data);
     }
 }
 
 int querySum(int l, int r) {
     int ans = 0;
-    for (l += N, r += N; l ^ r ^ 1; l >>= 1, r >>= 1) {
-        if (~l & 1) {
-            ans += treeSum[l ^ 1];
+    l += N;
+    r += N;
+    int updateIndexL[depth];
+    int updateIndexR[depth];
+    #pragma omp parallel for
+    for (int i = 0; i < depth; i++) {
+        int currentIndexL = l >> i;
+        int currentIndexR = r >> i;
+        if (currentIndexL ^ currentIndexR ^ 1 && currentIndexL != currentIndexR) {
+            updateIndexL[i] = currentIndexL;
+            updateIndexR[i] = currentIndexR;
         }
-        if (r & 1) {
-            ans += treeSum[r ^ 1];
+        else {
+            updateIndexL[i] = 1;
+            updateIndexR[i] = 0;
+        }
+    }
+    #pragma omp parallel for reduction(+:ans)
+    for (int i = 0; i < depth; i++) {
+        if (~updateIndexL[i] & 1) {
+            ans += treeSum[updateIndexL[i] ^ 1];
+        }
+        if (updateIndexR[i] & 1) {
+            ans += treeSum[updateIndexR[i] ^ 1];
         }
     }
     return ans;
@@ -79,12 +105,30 @@ int querySum(int l, int r) {
 
 int queryMax(int l, int r) {
     int ans = 0;
-    for (l += N, r += N; l ^ r ^ 1; l >>= 1, r >>= 1) {
-        if (~l & 1) {
-            ans += std::max(treeMax[l ^ 1], ans);
+    l += N;
+    r += N;
+    int updateIndexL[depth];
+    int updateIndexR[depth];
+    #pragma omp parallel for
+    for (int i = 0; i < depth; i++) {
+        int currentIndexL = l >> i;
+        int currentIndexR = r >> i;
+        if (currentIndexL ^ currentIndexR ^ 1 && currentIndexL != currentIndexR) {
+            updateIndexL[i] = currentIndexL;
+            updateIndexR[i] = currentIndexR;
         }
-        if (r & 1) {
-            ans += std::max(treeMax[r ^ 1], ans);
+        else {
+            updateIndexL[i] = 1;
+            updateIndexR[i] = 0;
+        }
+    }
+    #pragma omp parallel for reduction(max:ans)
+    for (int i = 0; i < depth; i++) {
+        if (~updateIndexL[i] & 1) {
+            ans = treeMax[updateIndexL[i] ^ 1] > ans ? treeMax[updateIndexL[i] ^ 1] : ans;
+        }
+        if (updateIndexR[i] & 1) {
+            ans = treeMax[updateIndexR[i] ^ 1] > ans ? treeMax[updateIndexR[i] ^ 1] : ans;
         }
     }
     return ans;
@@ -121,7 +165,7 @@ void cal(char* infile, char* outfile) {
     }
     delete [] treeSum;
 #endif
-#if Max == true
+#if MAX == true
     treeMax = new int[N << 1];
     buildMax();
     for (int t = T; t; t--) {
