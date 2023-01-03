@@ -1,6 +1,7 @@
-NVFLAGS  := -std=c++11 -O3 -Xptxas="-v" -arch=sm_61 
+OPTFLAGS = -O0
+NVFLAGS  := -std=c++11 $(OPTFLAGS) -Xptxas="-v" -arch=sm_61 
 LDFLAGS  := -lm
-#CXXFLAGS = -O3 -pthread
+CXXFLAGS = $(OPTFLAGS) -pthread
 EXES     := naive seq omp cuda
 
 alls: $(EXES)

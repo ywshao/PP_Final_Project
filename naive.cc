@@ -57,15 +57,15 @@ void cal(char* infile, char* outfile) {
         }
 #endif
 #if MAX == true
-    fscanf(fin, "%d %d %d", &action, &param1, &param2);
-    switch(action) {
-    case 0:
-        fprintf(fout, "%d ", queryMax(param1, param2));
-        break;
-    case 1:
-        updateMax(param1, param2);
-        break;
-    }
+        fscanf(fin, "%d %d %d", &action, &param1, &param2);
+        switch(action) {
+        case 0:
+            fprintf(fout, "%d ", queryMax(param1, param2));
+            break;
+        case 1:
+            updateMax(param1, param2);
+            break;
+        }
 #endif
     }
     delete [] A;
@@ -74,7 +74,9 @@ void cal(char* infile, char* outfile) {
 }
 
 int main(int argc, char* argv[]) {
-    /*struct timespec start, end, temp;
+    /*
+    // Put these code between fscanf, fprintf, update, and query
+    struct timespec start, end, temp;
     double time_used;
     clock_gettime(CLOCK_MONOTONIC, &start);
     // Do whatever
@@ -87,7 +89,8 @@ int main(int argc, char* argv[]) {
         temp.tv_nsec = end.tv_nsec - start.tv_nsec;
     }
     time_used = temp.tv_sec + (double) temp.tv_nsec / 1000000000.0;
-    printf("%f second\n", time_used);*/
+    printf("%f second\n", time_used);
+    */
 
     cal(argv[1], argv[2]);
     return 0;
