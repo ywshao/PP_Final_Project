@@ -21,10 +21,19 @@ void generate(char* outfile, char* charN, char* charT, char* charPortion) {
         int action = (rng() % 100 + 1 <= portion) ? 0 : 1;
         switch(action) {
         case 0:
-            fprintf(fout, "%d %d %d\n", action, rng() % N, rng() % DELTA_MAX);
+        {
+            int rng1 = rng() % N;
+            int rng2 = rng() % N;
+            if (rng1 < rng2) {
+                fprintf(fout, "%d %d %d\n", action, rng1, rng2);
+            }
+            else {
+                fprintf(fout, "%d %d %d\n", action, rng2, rng1);
+            }
             break;
+        }
         case 1:
-            fprintf(fout, "%d %d %d\n", action, rng() % N, rng() % N);
+            fprintf(fout, "%d %d %d\n", action, rng() % N, rng() % DELTA_MAX);
             break;
         }
     }
