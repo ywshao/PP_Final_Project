@@ -1,0 +1,5 @@
+cuda
+naive
+omp
+seq
+random/RNG
