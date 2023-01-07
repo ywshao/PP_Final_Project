@@ -156,7 +156,7 @@ void cal(char* infile, char* outfile) {
         fscanf(fin, "%d %d %d", &action, &param1, &param2);
         switch(action) {
         case 0:
-            fprintf(fout, "%d ", querySum(param1 - 1, param2 + 1));
+            fprintf(fout, "%d\n", querySum(param1 - 1, param2 + 1));
             break;
         case 1:
             updateSum(param1, param2);
@@ -172,7 +172,7 @@ void cal(char* infile, char* outfile) {
         fscanf(fin, "%d %d %d", &action, &param1, &param2);
         switch(action) {
         case 0:
-            fprintf(fout, "%d ", queryMax(param1 - 1, param2 + 1));
+            fprintf(fout, "%d\n", queryMax(param1 - 1, param2 + 1));
             break;
         case 1:
             updateMax(param1, param2);

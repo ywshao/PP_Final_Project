@@ -3,3 +3,4 @@ naive
 omp
 seq
 random/RNG
+*cuda
