@@ -33,4 +33,3 @@ O(N + TlogN)\
 seq\
 omp\
 cuda
-### Report
