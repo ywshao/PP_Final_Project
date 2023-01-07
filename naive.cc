@@ -65,6 +65,15 @@ void cal(char* infile, char* outfile) {
 #if SUM == true
         clock_gettime(CLOCK_MONOTONIC, &start);
         fscanf(fin, "%d %d %d", &action, &param1, &param2);
+        clock_gettime(CLOCK_MONOTONIC, &end);
+        if ((end.tv_nsec - start.tv_nsec) < 0) {
+            temp.tv_sec = end.tv_sec-start.tv_sec-1;
+            temp.tv_nsec = 1000000000 + end.tv_nsec - start.tv_nsec;
+        } else {
+            temp.tv_sec = end.tv_sec - start.tv_sec;
+            temp.tv_nsec = end.tv_nsec - start.tv_nsec;
+        }
+        Output_time = temp.tv_sec + (double) temp.tv_nsec / 1000000000.0;
         switch(action) {
         case 0:
             query = querySum(param1, param2);
