@@ -109,7 +109,63 @@ __global__ void buildSumTree(int *treeSum, int offset) {
         treeSum[0] = 0;
     }
 }
+// Unroll the last warp, but the warp don't like global store
+#elif KERNEL == 4
+__global__ void buildSumTree(int *treeSum, int offset) {
+    extern __shared__ int sdata[];
+    unsigned int tid = threadIdx.x;
+    unsigned int mappedIndex = indexMapper[blockDim.x + tid];
+    unsigned int index = offset + blockIdx.x * blockDim.x + mappedIndex;
+    unsigned int indexBlock = offset + blockIdx.x * blockDim.x;
+    int blockDimLog2 = 31 ^ __clz(blockDim.x);
+    sdata[tid] = treeSum[index];
+    __syncthreads();
+    for (int shift = blockDimLog2; shift; shift--) {
+        if (tid < (1 << (shift - 1))) {
+            sdata[tid] += sdata[tid + (1 << (shift - 1))];
+            treeSum[(indexBlock >> (blockDimLog2 - shift + 1)) + indexMapper[(1 << (shift - 1)) + tid]] = sdata[tid];
+        }
+        __syncthreads();
+    }
+    if (tid < 32) {
+        switch(blockDim.x) {
+        case 1024:
+        case 512:
+        case 256:
+        case 128:
+        case 64:
+        case 32:
+            /*sdata[tid] += sdata[tid + 32];
+            treeSum[(indexBlock >> (blockDimLog2 - 5)) + indexMapper[32 + tid]] = sdata[tid];
+            __syncthreads();*/
+        case 16:
+            /*sdata[tid] += sdata[tid + 16];
+            treeSum[(indexBlock >> (blockDimLog2 - 4)) + indexMapper[16 + tid]] = sdata[tid];
+            __syncthreads();*/
+        case 8:
+            /*sdata[tid] += sdata[tid + 8];
+            treeSum[(indexBlock >> (blockDimLog2 - 3)) + indexMapper[8 + tid]] = sdata[tid];
+            __syncthreads();*/
+        case 4:
+            /*sdata[tid] += sdata[tid + 4];
+            treeSum[(indexBlock >> (blockDimLog2 - 2)) + indexMapper[4 + tid]] = sdata[tid];
+            __syncthreads();*/
+        case 2:
+            /*sdata[tid] += sdata[tid + 2];
+            treeSum[(indexBlock >> (blockDimLog2 - 1)) + indexMapper[2 + tid]] = sdata[tid];
+            __syncthreads();*/
+        case 1:
+            /*sdata[tid] += sdata[tid + 1];
+            treeSum[(indexBlock >> (blockDimLog2)) + indexMapper[1 + tid]] = sdata[tid];
+            __syncthreads();*/
+        }
+    }
+    if (!tid) {
+        treeSum[0] = 0;
+    }
+}
 #endif
+
 
 void buildSum() {
     cudaMalloc((void**) &treeSum, (N << 1) * sizeof(int));
