@@ -19,6 +19,11 @@ int ansReceiver;
 __device__ int ansSender;
 __constant__ int indexMapper[2048];
 
+struct timespec start, end, temp;
+double Input_time;
+double Output_time;
+double Memcpy_time;
+
 inline int log2(int input) {
     return 31 ^ __builtin_clz(input);
 }
@@ -38,7 +43,7 @@ void calIndexMapper() {
     cudaMemcpyToSymbol(indexMapper, &indexMapperTemp, 2048 * sizeof(float));
 }
 
-// Interleaved addressing
+// Interleaved addressing less divergent
 #if KERNEL == 1
 __global__ void buildSumTree(int *treeSum, int offset) {
     extern __shared__ int sdata[];
@@ -58,7 +63,7 @@ __global__ void buildSumTree(int *treeSum, int offset) {
         treeSum[0] = 0;
     }
 }
-// Interleaved addressing less divergent
+// Interleaved addressing
 #elif KERNEL == 2
 __global__ void buildSumTree(int *treeSum, int offset) {
     extern __shared__ int sdata[];
@@ -190,7 +195,7 @@ void buildSum() {
 }
 
 
-// Interleaved addressing
+// Interleaved addressing less divergent
 #if KERNEL == 1
 __global__ void buildMaxTree(int *treeMax, int offset) {
     extern __shared__ int sdata[];
@@ -210,7 +215,7 @@ __global__ void buildMaxTree(int *treeMax, int offset) {
         treeMax[0] = 0;
     }
 }
-// Interleaved addressing less divergent
+// Interleaved addressing
 #elif KERNEL == 2
 __global__ void buildMaxTree(int *treeMax, int offset) {
     extern __shared__ int sdata[];
@@ -477,12 +482,23 @@ int queryMax(int l, int r) {
 
 void cal(char* infile, char* outfile) {
     calIndexMapper();
+    clock_gettime(CLOCK_MONOTONIC, &start);
     FILE* fin = fopen(infile, "r");
     FILE* fout = fopen(outfile, "w");
     fscanf(fin, "%d %d", &n, &T);
+    clock_gettime(CLOCK_MONOTONIC, &end);
+    if ((end.tv_nsec - start.tv_nsec) < 0) {
+        temp.tv_sec = end.tv_sec-start.tv_sec-1;
+        temp.tv_nsec = 1000000000 + end.tv_nsec - start.tv_nsec;
+    } else {
+        temp.tv_sec = end.tv_sec - start.tv_sec;
+        temp.tv_nsec = end.tv_nsec - start.tv_nsec;
+    }
+    Input_time += temp.tv_sec + (double) temp.tv_nsec / 1000000000.0;
     depth = log2((n << 1) - 1) + 1;
     N = 1 << depth - 1;
     cudaMallocHost((void**) &A, N * sizeof(int), cudaHostAllocDefault);
+    clock_gettime(CLOCK_MONOTONIC, &start);
     int i;
     for (i = 0; i < n; i++) {
         fscanf(fin, "%d", &A[i]);
@@ -490,14 +506,44 @@ void cal(char* infile, char* outfile) {
     for (; i < N; i++) {
         A[i] = 0;
     }
-    int action, param1, param2;
+    clock_gettime(CLOCK_MONOTONIC, &end);
+    if ((end.tv_nsec - start.tv_nsec) < 0) {
+        temp.tv_sec = end.tv_sec-start.tv_sec-1;
+        temp.tv_nsec = 1000000000 + end.tv_nsec - start.tv_nsec;
+    } else {
+        temp.tv_sec = end.tv_sec - start.tv_sec;
+        temp.tv_nsec = end.tv_nsec - start.tv_nsec;
+    }
+    Input_time += temp.tv_sec + (double) temp.tv_nsec / 1000000000.0;
+    int action, param1, param2, query;
 #if SUM == true
     buildSum();
     for (int t = T; t; t--) {
+        clock_gettime(CLOCK_MONOTONIC, &start);
         fscanf(fin, "%d %d %d", &action, &param1, &param2);
+        clock_gettime(CLOCK_MONOTONIC, &end);
+        if ((end.tv_nsec - start.tv_nsec) < 0) {
+            temp.tv_sec = end.tv_sec-start.tv_sec-1;
+            temp.tv_nsec = 1000000000 + end.tv_nsec - start.tv_nsec;
+        } else {
+            temp.tv_sec = end.tv_sec - start.tv_sec;
+            temp.tv_nsec = end.tv_nsec - start.tv_nsec;
+        }
+        Input_time += temp.tv_sec + (double) temp.tv_nsec / 1000000000.0;
         switch(action) {
         case 0:
-            fprintf(fout, "%d\n", querySum(param1 - 1, param2 + 1));
+            query = querySum(param1 - 1, param2 + 1);
+            clock_gettime(CLOCK_MONOTONIC, &start);
+            fprintf(fout, "%d\n", query);
+            clock_gettime(CLOCK_MONOTONIC, &end);
+            if ((end.tv_nsec - start.tv_nsec) < 0) {
+                temp.tv_sec = end.tv_sec-start.tv_sec-1;
+                temp.tv_nsec = 1000000000 + end.tv_nsec - start.tv_nsec;
+            } else {
+                temp.tv_sec = end.tv_sec - start.tv_sec;
+                temp.tv_nsec = end.tv_nsec - start.tv_nsec;
+            }
+            Output_time += temp.tv_sec + (double) temp.tv_nsec / 1000000000.0;
             break;
         case 1:
             updateSum<<<1, depth>>>(treeSum, param1 + N, param2);
@@ -509,10 +555,30 @@ void cal(char* infile, char* outfile) {
 #if MAX == true
     buildMax();
     for (int t = T; t; t--) {
+        clock_gettime(CLOCK_MONOTONIC, &start);
         fscanf(fin, "%d %d %d", &action, &param1, &param2);
+        clock_gettime(CLOCK_MONOTONIC, &end);
+        if ((end.tv_nsec - start.tv_nsec) < 0) {
+            temp.tv_sec = end.tv_sec-start.tv_sec-1;
+            temp.tv_nsec = 1000000000 + end.tv_nsec - start.tv_nsec;
+        } else {
+            temp.tv_sec = end.tv_sec - start.tv_sec;
+            temp.tv_nsec = end.tv_nsec - start.tv_nsec;
+        }
+        Input_time += temp.tv_sec + (double) temp.tv_nsec / 1000000000.0;
         switch(action) {
         case 0:
+            clock_gettime(CLOCK_MONOTONIC, &start);
             fprintf(fout, "%d\n", queryMax(param1 - 1, param2 + 1));
+            clock_gettime(CLOCK_MONOTONIC, &end);
+            if ((end.tv_nsec - start.tv_nsec) < 0) {
+                temp.tv_sec = end.tv_sec-start.tv_sec-1;
+                temp.tv_nsec = 1000000000 + end.tv_nsec - start.tv_nsec;
+            } else {
+                temp.tv_sec = end.tv_sec - start.tv_sec;
+                temp.tv_nsec = end.tv_nsec - start.tv_nsec;
+            }
+            Output_time += temp.tv_sec + (double) temp.tv_nsec / 1000000000.0;
             break;
         case 1:
             updateMax<<<1, depth>>>(treeMax, param1 + N, param2);
@@ -527,21 +593,8 @@ void cal(char* infile, char* outfile) {
 }
 
 int main(int argc, char* argv[]) {
-    /*struct timespec start, end, temp;
-    double time_used;
-    clock_gettime(CLOCK_MONOTONIC, &start);
-    // Do whatever
-    clock_gettime(CLOCK_MONOTONIC, &end);
-    if ((end.tv_nsec - start.tv_nsec) < 0) {
-        temp.tv_sec = end.tv_sec-start.tv_sec-1;
-        temp.tv_nsec = 1000000000 + end.tv_nsec - start.tv_nsec;
-    } else {
-        temp.tv_sec = end.tv_sec - start.tv_sec;
-        temp.tv_nsec = end.tv_nsec - start.tv_nsec;
-    }
-    time_used = temp.tv_sec + (double) temp.tv_nsec / 1000000000.0;
-    printf("%f second\n", time_used);*/
-
     cal(argv[1], argv[2]);
+    printf("Input:\t\t%f\n", Input_time);
+    printf("Output:\t\t%f\n", Output_time);
     return 0;
 }

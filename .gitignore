@@ -1,6 +1,10 @@
 cuda
+cuda_timing
 naive
+naive_timing
 omp
+omp_timing
 seq
+seq_timing
 random/RNG
 *cuda
