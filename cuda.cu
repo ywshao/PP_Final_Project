@@ -476,7 +476,9 @@ int queryMax(int l, int r) {
 }
 
 void cal(char* infile, char* outfile) {
+#if KERNEL == 3
     calIndexMapper();
+#endif
     FILE* fin = fopen(infile, "r");
     FILE* fout = fopen(outfile, "w");
     fscanf(fin, "%d %d", &n, &T);

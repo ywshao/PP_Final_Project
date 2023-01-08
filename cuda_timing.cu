@@ -5,7 +5,7 @@
 
 #define SUM true
 #define MAX false
-#define KERNEL 3
+#define KERNEL 1
 
 int n;
 int N;
@@ -481,7 +481,9 @@ int queryMax(int l, int r) {
 }
 
 void cal(char* infile, char* outfile) {
+#if KERNEL == 3
     calIndexMapper();
+#endif
     clock_gettime(CLOCK_MONOTONIC, &start);
     FILE* fin = fopen(infile, "r");
     FILE* fout = fopen(outfile, "w");
